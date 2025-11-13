@@ -1,0 +1,629 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "RAPHA Health API",
+    "description": "Comprehensive API documentation for RAPHA - a health-based platform for managing employee health profiles, authentication, and organizational data. This API supports multiple user types including Admins, Employees, Employers, Navigators, and Providers.",
+    "contact": {
+      "name": "RAPHA Support",
+      "email": "support@rapha-health.com"
+    },
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api/v1",
+      "description": "Local Development Server"
+    },
+    {
+      "url": "https://rapha-api.vercel.app/api/v1",
+      "description": "Production Server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "Microsoft OAuth authentication endpoints"
+    },
+    {
+      "name": "Health Check",
+      "description": "Service health monitoring"
+    },
+    {
+      "name": "Testing",
+      "description": "Test data creation endpoints (Development only)"
+    }
+  ],
+  "paths": {
+    "/auth/login": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "Initiate Microsoft OAuth Login",
+        "description": "Initiates the Microsoft Azure OAuth flow. Redirects user to Microsoft login page. This endpoint starts the authentication process with Microsoft Entra ID (Azure AD).",
+        "operationId": "loginUser",
+        "responses": {
+          "302": {
+            "description": "Redirect to Microsoft OAuth login page",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "example": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=809a3a19-6a3c-4944-9eab-9b08fe5aa8f9&redirect_uri=http://localhost:3000/api/v1/auth/redirect&response_type=code&scope=openid%20profile%20email%20User.Read"
+                },
+                "description": "Redirect URL to Microsoft OAuth authorization endpoint"
+              }
+            }
+          },
+          "500": {
+            "description": "Server error during authentication initialization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "message": "Failed to initiate login",
+                  "data": null,
+                  "meta": {
+                    "request_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "timestamp": "2025-11-11T16:42:00.000Z",
+                    "version": "1.0.0"
+                  },
+                  "error": "MSAL client initialization failed"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/redirect": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "OAuth Redirect Callback",
+        "description": "Handles Microsoft OAuth callback after user authentication. Exchanges authorization code for tokens and creates/fetches user in database. This endpoint is called automatically by Microsoft after successful authentication.",
+        "operationId": "oauthRedirect",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "description": "Authorization code returned by Microsoft OAuth provider",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "M.R3_BAY.f8e2c1a9-1234-5678-90ab-cdefg1234567"
+            }
+          },
+          {
+            "name": "session_state",
+            "in": "query",
+            "description": "Session state returned by Microsoft OAuth provider",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "00a855d9-f878-20a8-1f7e-401d566d29ac"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully authenticated. Session cookie set with JWT token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSuccessResponse"
+                },
+                "example": {
+                  "success": true,
+                  "message": "Authentication successful",
+                  "data": {
+                    "id": "67587-e26589b-47651d4-a716-44665655440001",
+                    "org_id": "5507678400-e295647b-41d4-a75616-446655440002",
+                    "email": "test@organization.com",
+                    "username": "test@organization.com",
+                    "first_name": "test",
+                    "last_name": "user",
+                    "full_name": "test user",
+                    "phone_work": null,
+                    "phone_personal": "1244776799",
+                    "title_job": "Software Engineer",
+                    "department_name": null,
+                    "role": "EMPLOYEE",
+                    "persona_type": null,
+                    "employment_status": "active",
+                    "mfa_enabled": false,
+                    "active": true,
+                    "status": "active",
+                    "entra_id": "d7658754b-35f6754-4a7532-a614-b8476f944cb3ce",
+                    "entra_upn": "test@organization.com",
+                    "preferred_language": "en",
+                    "timezone": "America/New_York",
+                    "gdpr_consent": false,
+                    "marketing_consent": false,
+                    "created_at": "2025-11-11T16:30:00.000Z",
+                    "updated_at": "2025-11-11T16:42:00.000Z"
+                  },
+                  "meta": {
+                    "request_id": "550e840865876-8765-7674-a716-65458769603",
+                    "timestamp": "2025-11-11T16:42:00.000Z",
+                    "version": "1.0.0"
+                  },
+                  "error": null
+                }
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "description": "Session cookie containing JWT token",
+                "schema": {
+                  "type": "string",
+                  "example": "session=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI567656786IjU1MGU4NDAwLWUyOWItNDFkNC1hNzE2LTQ0NjY1NTQ0MDAwMSIsImVtYWlsIjoiSGFyc2hhZF9WQGLUZY6emlhbnQuY29tIiwicm9sZSI6IkVNUExPWUVFI7567854n0.abcdefghijklmnopqrstuvwxyz1234567890; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=3600"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied. User domain not in allowed organizations.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "message": "Access denied. example.com is not an approved organization.",
+                  "data": null,
+                  "meta": {
+                    "request_id": "55075678e8400-e4678729b-417687d4-a716-4567846655440000",
+                    "timestamp": "2025-11-11T16:42:00.000Z",
+                    "version": "1.0.0"
+                  },
+                  "error": "Unauthorized domain"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error during token exchange",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "message": "Failed to exchange authorization code for tokens",
+                  "data": null,
+                  "meta": {
+                    "request_id": "55064357e8400-e25u679b-4164567d4-a716-46555440000",
+                    "timestamp": "2025-11-11T16:42:00.000Z",
+                    "version": "1.0.0"
+                  },
+                  "error": "Token exchange failed"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "Get Current Authenticated User",
+        "description": "Returns the current authenticated user's information. Requires valid session cookie. This endpoint retrieves user details from the database based on the authenticated session.",
+        "operationId": "getCurrentUser",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current user information retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "success": true,
+                  "message": "User fetched successfully",
+                  "data": {
+                    "id": "550e8400-e29b-41d4-a716-446655440001",
+                    "org_id": "550e8400-e29b-41d4-a716-446655440002",
+                    "email": "test@organization.com",
+                    "username": "test@organization.com",
+                    "first_name": "test",
+                    "last_name": "user",
+                    "full_name": "test",
+                    "phone_work": null,
+                    "phone_personal": "8137952445",
+                    "title_job": "Software Engineer",
+                    "department_name": "Engineering",
+                    "role": "EMPLOYEE",
+                    "persona_type": null,
+                    "employment_status": "active",
+                    "mfa_enabled": false,
+                    "active": true,
+                    "status": "active",
+                    "last_login": "2025-11-11T16:40:00.000Z",
+                    "last_login_ip": "2401:4900:6281:861f:f5a6:abb6:4ef5:dcfc",
+                    "entra_id": "d72a654b-35f4-4a32-a614-b84f944cb3ce",
+                    "entra_upn": "test@organization.com",
+                    "preferred_language": "en",
+                    "timezone": "America/New_York",
+                    "gdpr_consent": true,
+                    "marketing_consent": false,
+                    "created_at": "2025-11-11T10:00:00.000Z",
+                    "updated_at": "2025-11-11T16:42:00.000Z"
+                  },
+                  "meta": {
+                    "request_id": "550e8400-e29b-41d4-a716-446655440003",
+                    "timestamp": "2025-11-11T16:42:00.000Z",
+                    "version": "1.0.0"
+                  },
+                  "error": null
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Session cookie missing or invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "message": "Unauthorized - Please login first",
+                  "data": null,
+                  "meta": {
+                    "request_id": "550e4578400-e29b-41d4-a567716-4475688440000",
+                    "timestamp": "2025-11-11T16:42:00.000Z",
+                    "version": "1.0.0"
+                  },
+                  "error": "Invalid or expired session token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden. User does not have required role.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "message": "Forbidden - User role not authorized",
+                  "data": null,
+                  "meta": {
+                    "request_id": "5506456e8400-e2769b-41655d4-a716-446576655440000",
+                    "timestamp": "2025-11-11T16:42:00.000Z",
+                    "version": "1.0.0"
+                  },
+                  "error": "Insufficient permissions"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Logout User",
+        "description": "Logs out the current user by clearing the session cookie. After this, all subsequent requests without a valid session will be rejected.",
+        "operationId": "logoutUser",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User logged out successfully. Session cookie cleared.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "success": true,
+                  "message": "Logged out successfully",
+                  "data": null,
+                  "meta": {
+                    "request_id": "575678950e8400-e29b-41d5u6784-a716-446654656780",
+                    "timestamp": "2025-11-11T16:42:00.000Z",
+                    "version": "1.0.0"
+                  },
+                  "error": null
+                }
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "description": "Clear session cookie",
+                "schema": {
+                  "type": "string",
+                  "example": "session=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Session cookie missing or invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "message": "Unauthorized - Already logged out",
+                  "data": null,
+                  "meta": {
+                    "request_id": "550e86453400-e29b-41d4-a716-4466t37600",
+                    "timestamp": "2025-11-11T16:42:00.000Z",
+                    "version": "1.0.0"
+                  },
+                  "error": "No active session found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": ["Health Check"],
+        "summary": "Health Check Ping",
+        "description": "Simple health check endpoint to verify API service is running and responsive. Returns a pong message with no authentication required.",
+        "operationId": "healthPing",
+        "responses": {
+          "200": {
+            "description": "Service is healthy and running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "pong"
+                    }
+                  }
+                },
+                "example": {
+                  "message": "pong"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test/create_org": {
+      "get": {
+        "tags": ["Testing"],
+        "summary": "Create Test Organization",
+        "description": "**Development only endpoint.** Creates a test organization in the database for testing purposes. Should not be exposed in production. No authentication required.",
+        "operationId": "createTestOrganization",
+        "deprecated": true,
+        "responses": {
+          "200": {
+            "description": "Test organization created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "message": "Test organization created"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failed to create test organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "message": "Failed to create test organization",
+                  "data": null,
+                  "meta": {
+                    "request_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "timestamp": "2025-11-11T16:42:00.000Z",
+                    "version": "1.0.0"
+                  },
+                  "error": "Database insertion failed"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test/create_user": {
+      "get": {
+        "tags": ["Testing"],
+        "summary": "Create Test User",
+        "description": "**Development only endpoint.** Creates a test user with random email and generates an employee profile. Should not be exposed in production. No authentication required.",
+        "operationId": "createTestUser",
+        "deprecated": true,
+        "responses": {
+          "201": {
+            "description": "Test user created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "success": true,
+                  "message": "Test user created",
+                  "data": {
+                    "user": {
+                      "id": "550e8400-e29b-41d4-a716-446655440001",
+                      "org_id": "550e8400-e29b-41d4-a716-446655440002",
+                      "email": "testuser1234@organization.com",
+                      "username": "testuser1234@organization.com",
+                      "first_name": "Test",
+                      "last_name": "User",
+                      "role": "EMPLOYEE",
+                      "created_at": "2025-11-11T16:50:00.000Z"
+                    },
+                    "employeeProfile": {
+                      "id": "550e8400-e29b-41d4-a716-446655440010",
+                      "user_id": "550e8400-e29b-41d4-a716-446655440001",
+                      "employee_name": "Test User",
+                      "role": "EMPLOYEE",
+                      "company": "default",
+                      "contact_email": "testuser1234@organization.com",
+                      "created_at": "2025-11-11T16:50:00.000Z"
+                    }
+                  },
+                  "meta": {
+                    "request_id": "550e8400-e29b-41d4-a716-446655440003",
+                    "timestamp": "2025-11-11T16:50:00.000Z",
+                    "version": "1.0.0"
+                  },
+                  "error": null
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failed to create test user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "message": "Failed to create test user",
+                  "data": null,
+                  "meta": {
+                    "request_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "timestamp": "2025-11-11T16:42:00.000Z",
+                    "version": "1.0.0"
+                  },
+                  "error": "User creation failed"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "required": ["success", "message", "data", "meta", "error"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true,
+            "description": "Indicates if the request was successful"
+          },
+          "message": {
+            "type": "string",
+            "example": "Action completed successfully",
+            "description": "Human-readable success message"
+          },
+          "data": {
+            "type": "object",
+            "nullable": true,
+            "description": "Response payload containing requested data"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/MetaResponse"
+          },
+          "error": {
+            "type": "null",
+            "example": null,
+            "description": "Null on success responses"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["success", "message", "data", "meta", "error"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false,
+            "description": "Indicates if the request failed"
+          },
+          "message": {
+            "type": "string",
+            "example": "Failed to retrieve profile",
+            "description": "Human-readable error message"
+          },
+          "data": {
+            "type": "null",
+            "example": null,
+            "description": "Null on error responses"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/MetaResponse"
+          },
+          "error": {
+            "type": "string",
+            "nullable": true,
+            "example": "Error details or stack trace",
+            "description": "Error details (stack trace in development, redacted in production)"
+          }
+        }
+      },
+      "MetaResponse": {
+        "type": "object",
+        "required": ["request_id", "timestamp", "version"],
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "550e8400-e29b-41d4-a716-446655440000",
+            "description": "Unique request identifier for tracking"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-11-11T16:42:00.000Z",
+            "description": "ISO 8601 timestamp of the response"
+          },
+          "version": {
+            "type": "string",
+            "example": "1.0.0",
+            "description": "API version"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "session",
+        "description": "JWT token stored in session cookie. Obtained after successful Microsoft OAuth authentication. This cookie is automatically sent with all authenticated requests."
+      }
+    }
+  }
+}
