@@ -7,55 +7,51 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ---------------------------------------------------------- //
-// ---------------------- ORGANIZATION ---------------------- //
-// ---------------------------------------------------------- //
-
 model Organization {
-  id                 String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name               String         @unique
-  type               String?        @db.VarChar(50)
-  legal_entity_type  String?        @db.VarChar(50)
-  tax_id             String?        @unique @db.VarChar(50)
-  hq_address_street  String?        @db.VarChar(255)
-  hq_address_city    String?        @db.VarChar(100)
-  hq_address_state   String?        @db.VarChar(2)
-  hq_address_zip     String?        @db.VarChar(20)
-  hq_address_country String?        @default("USA") @db.VarChar(100)
-  phone              String?        @db.VarChar(20)
-  email              String?        @db.VarChar(255)
-  website            String?        @db.VarChar(255)
-  industry_vertical  String?        @db.VarChar(100)
-  total_employees    Int?
-  timezone           String?        @default("America/New_York") @db.VarChar(50)
-  preferred_language String?        @default("en") @db.VarChar(10)
-  hipaa_compliant    Boolean        @default(false)
-  soc2_certified     Boolean        @default(false)
-  status             String?        @default("active") @db.VarChar(20)
-  metadata           Json?
-  parent_org_id      String?        @db.Uuid
-  parent_org         Organization?  @relation("OrgHierarchy", fields: [parent_org_id], references: [id])
-  child_orgs         Organization[] @relation("OrgHierarchy")
-  enrollment_date    DateTime?
-  contract_end_date  DateTime?
-  created_at         DateTime       @default(now())
-  updated_at         DateTime       @default(now()) @updatedAt
-  deleted_at         DateTime?
-
-  users               User[]
-  employers           Employer[]
-  employerSites       EmployerSite[]
-  employerDepartments EmployerDepartment[]
+  id                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                String               @unique
+  type                String?              @db.VarChar(50)
+  legal_entity_type   String?              @db.VarChar(50)
+  tax_id              String?              @unique @db.VarChar(50)
+  hq_address_street   String?              @db.VarChar(255)
+  hq_address_city     String?              @db.VarChar(100)
+  hq_address_state    String?              @db.VarChar(2)
+  hq_address_zip      String?              @db.VarChar(20)
+  hq_address_country  String?              @default("USA") @db.VarChar(100)
+  phone               String?              @db.VarChar(20)
+  email               String?              @db.VarChar(255)
+  website             String?              @db.VarChar(255)
+  industry_vertical   String?              @db.VarChar(100)
+  total_employees     Int?
+  timezone            String?              @default("America/New_York") @db.VarChar(50)
+  preferred_language  String?              @default("en") @db.VarChar(10)
+  hipaa_compliant     Boolean              @default(false)
+  soc2_certified      Boolean              @default(false)
+  status              String?              @default("active") @db.VarChar(20)
+  metadata            Json?
+  parent_org_id       String?              @db.Uuid
+  enrollment_date     DateTime?
+  contract_end_date   DateTime?
+  created_at          DateTime             @default(now())
+  updated_at          DateTime             @default(now()) @updatedAt
+  deleted_at          DateTime?
+  User                User[]
+  allergies           Allergy[]
+  consentFlags        ConsentFlag[]
+  documentVaults      DocumentVault[]
+  educationProgress   EducationProgress[]
   employeeProfiles    EmployeeProfile[]
+  employerDepartments EmployerDepartment[]
+  employer_profiles   employer_profiles[]
+  employerSites       EmployerSite[]
+  employers           Employer[]
   medicalHistories    MedicalHistory[]
   medications         Medication[]
-  allergies           Allergy[]
-  vaccinations        Vaccination[]
-  consentFlags        ConsentFlag[]
+  parent_org          Organization?        @relation("OrgHierarchy", fields: [parent_org_id], references: [id])
+  child_orgs          Organization[]       @relation("OrgHierarchy")
   riskAssessments     RiskAssessment[]
   screeningResults    ScreeningResult[]
-  educationProgress   EducationProgress[]
-  documentVaults      DocumentVault[]
+  vaccinations        Vaccination[]
 
   @@index([status])
   @@index([parent_org_id])
@@ -63,182 +59,105 @@ model Organization {
   @@map("organizations")
 }
 
-// ---------------------------------------------------------- //
-// ------------------------- EMPLOYEE ----------------------- //
-// ---------------------------------------------------------- //
-
-model User {
-  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  org_id       String       @db.Uuid
-  organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
-
-  email                      String            @unique
-  password_hash              String
-  username                   String?
-  first_name                 String?
-  last_name                  String?
-  full_name                  String?           @ignore // this field is defined in raw SQL migration file.
-  phone_work                 String?
-  phone_personal             String?
-  title_job                  String?
-  department_name            String?
-  role                       String?
-  persona_type               String?
-  employment_status          String?           @default("active")
-  mfa_enabled                Boolean           @default(false)
-  mfa_method                 String?
-  mfa_phone                  String?
-  mfa_email                  String?
-  backup_codes               String?
-  active                     Boolean           @default(true)
-  status                     String?           @default("active")
-  last_login                 DateTime?
-  last_login_ip              String?
-  last_login_user_agent      String?
-  password_changed_at        DateTime?
-  mfa_enabled_at             DateTime?
-  failed_login_attempts      Int               @default(0)
-  failed_login_lockout_until DateTime?
-  entra_id                   String            @unique @db.Uuid
-  entra_upn                  String?
-  preferred_language         String?           @default("en")
-  profile_preferences        Json?
-  timezone                   String?           @default("America/New_York")
-  gdpr_consent               Boolean           @default(false)
-  marketing_consent          Boolean           @default(false)
-  gdpr_consent_date          DateTime?
-  created_at                 DateTime          @default(now())
-  updated_at                 DateTime          @updatedAt
-  deleted_at                 DateTime?
-  employeeProfile            EmployeeProfile?
-  managedEmployers           Employer[]
-  createdRiskAssessments     RiskAssessment[]  @relation("CreatedRiskAssessments")
-  reviewedRiskAssessments    RiskAssessment[]  @relation("ReviewedRiskAssessments")
-  flaggedRiskAssessments     RiskAssessment[]  @relation("FlaggedRiskAssessments")
-  providerScreeningResults   ScreeningResult[] @relation("ProviderScreeningResults")
-  reviewedScreeningResults   ScreeningResult[] @relation("ReviewedScreeningResults")
-  escalatedScreeningResults  ScreeningResult[] @relation("EscalatedScreeningResults")
-  uploadedDocuments          DocumentVault[]
-
-  @@unique([org_id, email])
-  @@index([org_id])
-  @@index([email])
-  @@index([role])
-  @@index([status])
-  @@index([entra_id])
-  @@map("users")
-}
-
 model EmployeeProfile {
-  id                     String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id                String              @unique @db.Uuid
-  user                   User                @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  org_id                 String              @db.Uuid
-  organization           Organization        @relation(fields: [org_id], references: [id], onDelete: Cascade)
-  employer_id            String?             @db.Uuid
-  employer_site_id       String?             @db.Uuid
-  employerSite           EmployerSite?       @relation(fields: [employer_site_id], references: [id])
-  employer_department_id String?             @db.Uuid
-  employerDepartment     EmployerDepartment? @relation(fields: [employer_department_id], references: [id])
-
-  employee_id_internal String? @unique @db.VarChar(100)
-  perlink_master_id    String? @db.VarChar(100)
-
-  first_name       String?   @db.VarChar(100)
-  last_name        String?   @db.VarChar(100)
-  middle_name      String?   @db.VarChar(100)
-  preferred_name   String?   @db.VarChar(100)
-  gender           String?   @db.VarChar(50)
-  date_of_birth    DateTime? @db.Date
-  marital_status   String?   @db.VarChar(50)
-  nationality      String?   @db.VarChar(100)
-  primary_language String?   @db.VarChar(50)
-
-  phone_personal String? @db.VarChar(20)
-  phone_work     String? @db.VarChar(20)
-  email_personal String? @db.VarChar(255)
-  email_work     String? @db.VarChar(255)
-
-  address_street_line1 String? @db.VarChar(255)
-  address_street_line2 String? @db.VarChar(255)
-  address_city         String? @db.VarChar(100)
-  address_state        String? @db.VarChar(2)
-  address_zip          String? @db.VarChar(20)
-  address_country      String? @default("USA") @db.VarChar(100)
-
-  emergency_contact_name     String? @db.VarChar(255)
-  emergency_contact_phone    String? @db.VarChar(20)
-  emergency_contact_email    String? @db.VarChar(255)
-  emergency_contact_relation String? @db.VarChar(100)
-
-  height_cm  Int?
-  weight_kg  Int?
-  bmi        Decimal? @db.Decimal(5, 2)
-  blood_type String?  @db.VarChar(10)
-  ethnicity  String?  @db.VarChar(100)
-  race       String?  @db.VarChar(100)
-
-  occupation         String?   @db.VarChar(255)
-  job_classification String?   @db.VarChar(50)
-  hire_date          DateTime? @db.Date
-
-  smoker                  Boolean?
-  alcohol_units_per_week  Int?
-  exercise_frequency      String?  @db.VarChar(50)
-  exercise_hours_per_week Int?
-  diet_type               String?  @db.VarChar(50)
-
-  family_history_cancer        Boolean @default(false)
-  family_history_heart_disease Boolean @default(false)
-  family_history_diabetes      Boolean @default(false)
-  family_history_notes         String? @db.Text
-
-  mental_health_history    Boolean @default(false)
-  mental_health_conditions String? @db.VarChar(255)
-
-  sleep_issues          Boolean @default(false)
-  sleep_quality         String? @db.VarChar(50)
-  sleep_hours_per_night Int?
-  stress_level          String? @db.VarChar(50)
-
-  last_physical_exam_date DateTime?
-  last_dental_exam_date   DateTime?
-  last_eye_exam_date      DateTime?
-  last_screening_date     DateTime?
-  last_vaccination_date   DateTime?
-
-  healthcare_provider_primary_name  String? @db.VarChar(255)
-  healthcare_provider_primary_phone String? @db.VarChar(20)
-  healthcare_provider_primary_fax   String? @db.VarChar(20)
-
-  insurance_plan_type      String? @db.VarChar(50)
-  insurance_plan_name      String? @db.VarChar(255)
-  insurance_member_id      String? @db.VarChar(100)
-  insurance_provider_phone String? @db.VarChar(20)
-
-  enrolled_in_wellness_program     Boolean   @default(false)
-  wellness_program_enrollment_date DateTime?
-
-  perlink_ref_id                String?   @db.Uuid
-  profile_completion_date       DateTime?
-  profile_completion_percentage Decimal?  @db.Decimal(5, 2)
-  profile_status                String    @default("incomplete") @db.VarChar(50)
-
-  lifestyle_data Json?
-
-  created_at DateTime  @default(now())
-  updated_at DateTime  @updatedAt
-  deleted_at DateTime?
-
-  medicalHistory    MedicalHistory[]
-  medications       Medication[]
-  allergies         Allergy[]
-  vaccinations      Vaccination[]
-  consentFlags      ConsentFlag[]
-  riskAssessments   RiskAssessment[]
-  screeningResults  ScreeningResult[]
-  educationProgress EducationProgress[]
-  documentVaults    DocumentVault[]
+  id                                String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                           String                    @unique @db.Uuid
+  gender                            String?                   @db.VarChar(50)
+  role                              String?
+  stress_level                      String?                   @db.VarChar(50)
+  created_at                        DateTime                  @default(now())
+  updated_at                        DateTime                  @updatedAt
+  active                            Boolean                   @default(true)
+  address_city                      String?                   @db.VarChar(100)
+  address_country                   String?                   @default("USA") @db.VarChar(100)
+  address_state                     String?                   @db.VarChar(2)
+  address_street_line1              String?                   @db.VarChar(255)
+  address_street_line2              String?                   @db.VarChar(255)
+  address_zip                       String?                   @db.VarChar(20)
+  alcohol_units_per_week            Int?
+  blood_type                        String?                   @db.VarChar(10)
+  bmi                               Decimal?                  @db.Decimal(5, 2)
+  date_of_birth                     DateTime?                 @db.Date
+  deleted_at                        DateTime?
+  department_name                   String?
+  diet_type                         String?                   @db.VarChar(50)
+  email_personal                    String?                   @db.VarChar(255)
+  email_work                        String?                   @db.VarChar(255)
+  emergency_contact_email           String?                   @db.VarChar(255)
+  emergency_contact_name            String?                   @db.VarChar(255)
+  emergency_contact_phone           String?                   @db.VarChar(20)
+  emergency_contact_relation        String?                   @db.VarChar(100)
+  employee_id_internal              String?                   @unique @db.VarChar(100)
+  employer_department_id            String?                   @db.Uuid
+  employer_id                       String?                   @db.Uuid
+  employer_site_id                  String?                   @db.Uuid
+  enrolled_in_wellness_program      Boolean                   @default(false)
+  ethnicity                         String?                   @db.VarChar(100)
+  exercise_frequency                String?                   @db.VarChar(50)
+  family_history_cancer             Boolean                   @default(false)
+  family_history_diabetes           Boolean                   @default(false)
+  family_history_heart_disease      Boolean                   @default(false)
+  family_history_notes              String?
+  first_name                        String?
+  full_name                         String?
+  healthcare_provider_primary_fax   String?                   @db.VarChar(20)
+  healthcare_provider_primary_name  String?                   @db.VarChar(255)
+  healthcare_provider_primary_phone String?                   @db.VarChar(20)
+  height_cm                         Int?
+  hire_date                         DateTime?                 @db.Date
+  insurance_member_id               String?                   @db.VarChar(100)
+  insurance_plan_name               String?                   @db.VarChar(255)
+  insurance_plan_type               String?                   @db.VarChar(50)
+  insurance_provider_phone          String?                   @db.VarChar(20)
+  job_classification                String?                   @db.VarChar(50)
+  last_dental_exam_date             DateTime?
+  last_eye_exam_date                DateTime?
+  last_name                         String?
+  last_physical_exam_date           DateTime?
+  last_screening_date               DateTime?
+  last_vaccination_date             DateTime?
+  lifestyle_data                    Json?
+  marital_status                    String?                   @db.VarChar(50)
+  mental_health_conditions          String?                   @db.VarChar(255)
+  mental_health_history             Boolean                   @default(false)
+  middle_name                       String?                   @db.VarChar(100)
+  nationality                       String?                   @db.VarChar(100)
+  occupation                        String?                   @db.VarChar(255)
+  org_id                            String                    @db.Uuid
+  perlink_master_id                 String?                   @db.VarChar(100)
+  perlink_ref_id                    String?                   @db.Uuid
+  phone_personal                    String?                   @db.VarChar(20)
+  phone_work                        String?                   @db.VarChar(20)
+  preferred_name                    String?                   @db.VarChar(100)
+  primary_language                  String?                   @db.VarChar(50)
+  profile_completion_date           DateTime?
+  profile_completion_percentage     Decimal?                  @db.Decimal(5, 2)
+  profile_status                    String                    @default("incomplete") @db.VarChar(50)
+  race                              String?                   @db.VarChar(100)
+  sleep_hours_per_night             Int?
+  sleep_issues                      Boolean                   @default(false)
+  sleep_quality                     String?                   @db.VarChar(50)
+  smoker                            Boolean?
+  title_job                         String?
+  username                          String?
+  weight_kg                         Int?
+  wellness_program_enrollment_date  DateTime?
+  exercise_hours_per_week           Int?
+  allergies                         Allergy[]
+  consentFlags                      ConsentFlag[]
+  documentVaults                    DocumentVault[]
+  educationProgress                 EducationProgress[]
+  employerDepartment                EmployerDepartment?       @relation(fields: [employer_department_id], references: [id])
+  employerSite                      EmployerSite?             @relation(fields: [employer_site_id], references: [id])
+  organization                      Organization              @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  user                              User                      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  employers                         Employer[]
+  family_health_histories           family_health_histories[]
+  medicalHistory                    MedicalHistory[]
+  medications                       Medication[]
+  riskAssessments                   RiskAssessment[]
+  screeningResults                  ScreeningResult[]
+  vaccinations                      Vaccination[]
 
   @@index([user_id])
   @@index([org_id])
@@ -252,7 +171,6 @@ model EmployeeProfile {
 model EmployerSite {
   id               String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   org_id           String            @db.Uuid
-  organization     Organization      @relation(fields: [org_id], references: [id], onDelete: Cascade)
   employer_id      String            @db.Uuid
   site_name        String            @db.VarChar(255)
   address_street   String?           @db.VarChar(255)
@@ -263,7 +181,9 @@ model EmployerSite {
   created_at       DateTime          @default(now())
   updated_at       DateTime          @updatedAt
   deleted_at       DateTime?
+  active           Boolean           @default(true)
   employeeProfiles EmployeeProfile[]
+  organization     Organization      @relation(fields: [org_id], references: [id], onDelete: Cascade)
 
   @@index([org_id])
   @@index([employer_id])
@@ -273,13 +193,14 @@ model EmployerSite {
 model EmployerDepartment {
   id               String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   org_id           String            @db.Uuid
-  organization     Organization      @relation(fields: [org_id], references: [id], onDelete: Cascade)
   employer_id      String            @db.Uuid
   department_name  String            @db.VarChar(255)
   created_at       DateTime          @default(now())
   updated_at       DateTime          @updatedAt
   deleted_at       DateTime?
+  active           Boolean           @default(true)
   employeeProfiles EmployeeProfile[]
+  organization     Organization      @relation(fields: [org_id], references: [id], onDelete: Cascade)
 
   @@index([org_id])
   @@index([employer_id])
@@ -287,37 +208,33 @@ model EmployerDepartment {
 }
 
 model MedicalHistory {
-  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  employee_id     String          @db.Uuid
-  employeeProfile EmployeeProfile @relation(fields: [employee_id], references: [id], onDelete: Cascade)
-  org_id          String          @db.Uuid
-  organization    Organization    @relation(fields: [org_id], references: [id], onDelete: Cascade)
-
-  condition_code       String?   @db.VarChar(20)
-  condition_name       String?   @db.VarChar(255)
-  condition_category   String?   @db.VarChar(50)
-  diagnosis_date       DateTime? @db.Date
-  diagnosis_confidence String?   @db.VarChar(50)
-  resolution_date      DateTime? @db.Date
-  onset_date           DateTime? @db.Date
-  severity             String?   @db.VarChar(50)
-  status               String?   @db.VarChar(50)
-  treatment_status     String?   @db.VarChar(50)
-
-  clinical_notes           String? @db.Text
-  managed_by_provider_name String? @db.VarChar(255)
-  managed_by_provider_id   String? @db.VarChar(100)
-
-  medications_for_condition Json?
-  lifestyle_modifications   Json?
-  lab_results_related       Json?
-
-  impacts_screening_recommendations Boolean @default(false)
-  requires_specialist_followup      Boolean @default(false)
-
-  created_at DateTime  @default(now())
-  updated_at DateTime  @updatedAt
-  deleted_at DateTime?
+  id                                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  employee_id                       String          @db.Uuid
+  org_id                            String          @db.Uuid
+  condition_code                    String?         @db.VarChar(20)
+  condition_name                    String?         @db.VarChar(255)
+  condition_category                String?         @db.VarChar(50)
+  diagnosis_date                    DateTime?       @db.Date
+  diagnosis_confidence              String?         @db.VarChar(50)
+  resolution_date                   DateTime?       @db.Date
+  onset_date                        DateTime?       @db.Date
+  severity                          String?         @db.VarChar(50)
+  status                            String?         @db.VarChar(50)
+  treatment_status                  String?         @db.VarChar(50)
+  clinical_notes                    String?
+  managed_by_provider_name          String?         @db.VarChar(255)
+  managed_by_provider_id            String?         @db.VarChar(100)
+  medications_for_condition         Json?
+  lifestyle_modifications           Json?
+  lab_results_related               Json?
+  impacts_screening_recommendations Boolean         @default(false)
+  requires_specialist_followup      Boolean         @default(false)
+  created_at                        DateTime        @default(now())
+  updated_at                        DateTime        @updatedAt
+  deleted_at                        DateTime?
+  active                            Boolean         @default(true)
+  employeeProfile                   EmployeeProfile @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  organization                      Organization    @relation(fields: [org_id], references: [id], onDelete: Cascade)
 
   @@index([employee_id])
   @@index([org_id])
@@ -326,39 +243,38 @@ model MedicalHistory {
 }
 
 model Medication {
-  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  employee_id     String          @db.Uuid
-  employeeProfile EmployeeProfile @relation(fields: [employee_id], references: [id], onDelete: Cascade)
-  org_id          String          @db.Uuid
-  organization    Organization    @relation(fields: [org_id], references: [id], onDelete: Cascade)
-
-  medication_name              String?   @db.VarChar(255)
-  generic_name                 String?   @db.VarChar(255)
-  brand_name                   String?   @db.VarChar(255)
-  medication_code              String?   @db.VarChar(50)
-  strength                     String?   @db.VarChar(50)
-  dosage_value                 String?   @db.VarChar(50)
-  dosage_unit                  String?   @db.VarChar(50)
-  frequency                    String?   @db.VarChar(100)
-  route                        String?   @db.VarChar(50)
-  start_date                   DateTime? @db.Date
-  end_date                     DateTime? @db.Date
-  duration                     String?   @db.VarChar(50)
-  status                       String?   @db.VarChar(50)
-  discontinued_date            DateTime? @db.Date
-  reason_prescribed            String?   @db.Text
-  prescribing_provider_name    String?   @db.VarChar(255)
-  prescribing_provider_id      String?   @db.VarChar(100)
-  pharmacy_name                String?   @db.VarChar(255)
-  pharmacy_contact             String?   @db.VarChar(100)
-  side_effects                 String?   @db.Text
-  contraindications_notes      String?   @db.Text
-  affects_screening            Boolean   @default(false)
+  id                           String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  employee_id                  String          @db.Uuid
+  org_id                       String          @db.Uuid
+  medication_name              String?         @db.VarChar(255)
+  generic_name                 String?         @db.VarChar(255)
+  brand_name                   String?         @db.VarChar(255)
+  medication_code              String?         @db.VarChar(50)
+  strength                     String?         @db.VarChar(50)
+  dosage_value                 String?         @db.VarChar(50)
+  dosage_unit                  String?         @db.VarChar(50)
+  frequency                    String?         @db.VarChar(100)
+  route                        String?         @db.VarChar(50)
+  start_date                   DateTime?       @db.Date
+  end_date                     DateTime?       @db.Date
+  duration                     String?         @db.VarChar(50)
+  status                       String?         @db.VarChar(50)
+  discontinued_date            DateTime?       @db.Date
+  reason_prescribed            String?
+  prescribing_provider_name    String?         @db.VarChar(255)
+  prescribing_provider_id      String?         @db.VarChar(100)
+  pharmacy_name                String?         @db.VarChar(255)
+  pharmacy_contact             String?         @db.VarChar(100)
+  side_effects                 String?
+  contraindications_notes      String?
+  affects_screening            Boolean         @default(false)
   interactions_with_conditions Json?
-
-  created_at DateTime  @default(now())
-  updated_at DateTime  @updatedAt
-  deleted_at DateTime?
+  created_at                   DateTime        @default(now())
+  updated_at                   DateTime        @updatedAt
+  deleted_at                   DateTime?
+  active                       Boolean         @default(true)
+  employeeProfile              EmployeeProfile @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  organization                 Organization    @relation(fields: [org_id], references: [id], onDelete: Cascade)
 
   @@index([employee_id])
   @@index([org_id])
@@ -367,30 +283,29 @@ model Medication {
 }
 
 model Allergy {
-  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  employee_id     String          @db.Uuid
-  employeeProfile EmployeeProfile @relation(fields: [employee_id], references: [id], onDelete: Cascade)
-  org_id          String          @db.Uuid
-  organization    Organization    @relation(fields: [org_id], references: [id], onDelete: Cascade)
-
-  allergen_name                      String?   @db.VarChar(255)
-  allergen_category                  String?   @db.VarChar(50)
-  allergen_code                      String?   @db.VarChar(50)
-  severity                           String?   @db.VarChar(50)
-  reaction_type                      String?   @db.VarChar(100)
-  reaction_description               String?   @db.Text
-  onset_date                         DateTime? @db.Date
-  last_reaction_date                 DateTime? @db.Date
-  status                             String?   @db.VarChar(50)
-  verified_by_provider               String?   @db.VarChar(255)
-  requires_epinephrine_auto_injector Boolean   @default(false)
-  first_reported_date                DateTime? @db.Date
-  remediation_actions                String?   @db.Text
-  treatment_plan                     String?   @db.Text
-
-  created_at DateTime  @default(now())
-  updated_at DateTime  @updatedAt
-  deleted_at DateTime?
+  id                                 String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  employee_id                        String          @db.Uuid
+  org_id                             String          @db.Uuid
+  allergen_name                      String?         @db.VarChar(255)
+  allergen_category                  String?         @db.VarChar(50)
+  allergen_code                      String?         @db.VarChar(50)
+  severity                           String?         @db.VarChar(50)
+  reaction_type                      String?         @db.VarChar(100)
+  reaction_description               String?
+  onset_date                         DateTime?       @db.Date
+  last_reaction_date                 DateTime?       @db.Date
+  status                             String?         @db.VarChar(50)
+  verified_by_provider               String?         @db.VarChar(255)
+  requires_epinephrine_auto_injector Boolean         @default(false)
+  first_reported_date                DateTime?       @db.Date
+  remediation_actions                String?
+  treatment_plan                     String?
+  created_at                         DateTime        @default(now())
+  updated_at                         DateTime        @updatedAt
+  deleted_at                         DateTime?
+  active                             Boolean         @default(true)
+  employeeProfile                    EmployeeProfile @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  organization                       Organization    @relation(fields: [org_id], references: [id], onDelete: Cascade)
 
   @@index([employee_id])
   @@index([org_id])
@@ -399,36 +314,35 @@ model Allergy {
 }
 
 model Vaccination {
-  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  employee_id     String          @db.Uuid
-  employeeProfile EmployeeProfile @relation(fields: [employee_id], references: [id], onDelete: Cascade)
-  org_id          String          @db.Uuid
-  organization    Organization    @relation(fields: [org_id], references: [id], onDelete: Cascade)
-
-  vaccine_name                String?   @db.VarChar(255)
-  vaccine_code                String?   @db.VarChar(50)
-  disease_prevented           String?   @db.VarChar(255)
-  vaccination_date            DateTime? @db.Date
-  route                       String?   @db.VarChar(10)
-  body_location               String?   @db.VarChar(100)
-  manufacturer                String?   @db.VarChar(255)
-  lot_number                  String?   @db.VarChar(100)
-  administered_by_name        String?   @db.VarChar(255)
-  administered_by_provider_id String?   @db.VarChar(100)
-  facility_name               String?   @db.VarChar(255)
-  expiry_date                 DateTime? @db.Date
-  status                      String?   @db.VarChar(50)
-  next_due_date               DateTime? @db.Date
+  id                          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  employee_id                 String          @db.Uuid
+  org_id                      String          @db.Uuid
+  vaccine_name                String?         @db.VarChar(255)
+  vaccine_code                String?         @db.VarChar(50)
+  disease_prevented           String?         @db.VarChar(255)
+  vaccination_date            DateTime?       @db.Date
+  route                       String?         @db.VarChar(10)
+  body_location               String?         @db.VarChar(100)
+  manufacturer                String?         @db.VarChar(255)
+  lot_number                  String?         @db.VarChar(100)
+  administered_by_name        String?         @db.VarChar(255)
+  administered_by_provider_id String?         @db.VarChar(100)
+  facility_name               String?         @db.VarChar(255)
+  expiry_date                 DateTime?       @db.Date
+  status                      String?         @db.VarChar(50)
+  next_due_date               DateTime?       @db.Date
   doses_given                 Int?
   doses_required              Int?
-  side_effects                String?   @db.Text
-  contraindicated             Boolean   @default(false)
-  contraindication_reason     String?   @db.Text
+  side_effects                String?
+  contraindicated             Boolean         @default(false)
+  contraindication_reason     String?
   vaccine_series_data         Json?
-
-  created_at DateTime  @default(now())
-  updated_at DateTime  @updatedAt
-  deleted_at DateTime?
+  created_at                  DateTime        @default(now())
+  updated_at                  DateTime        @updatedAt
+  deleted_at                  DateTime?
+  active                      Boolean         @default(true)
+  employeeProfile             EmployeeProfile @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  organization                Organization    @relation(fields: [org_id], references: [id], onDelete: Cascade)
 
   @@index([employee_id])
   @@index([org_id])
@@ -437,39 +351,35 @@ model Vaccination {
 }
 
 model ConsentFlag {
-  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  employee_id     String          @db.Uuid
-  employeeProfile EmployeeProfile @relation(fields: [employee_id], references: [id], onDelete: Cascade)
-  org_id          String          @db.Uuid
-  organization    Organization    @relation(fields: [org_id], references: [id], onDelete: Cascade)
-
-  data_consent_flag                Boolean   @default(false)
-  ai_consent_flag                  Boolean   @default(false)
-  research_consent_flag            Boolean   @default(false)
-  marketing_consent_flag           Boolean   @default(false)
-  telehealth_consent_flag          Boolean   @default(false)
-  genetic_testing_consent_flag     Boolean   @default(false)
-  results_sharing_consent_flag     Boolean   @default(false)
-  family_notification_consent_flag Boolean   @default(false)
+  id                               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  employee_id                      String          @db.Uuid
+  org_id                           String          @db.Uuid
+  data_consent_flag                Boolean         @default(false)
+  ai_consent_flag                  Boolean         @default(false)
+  research_consent_flag            Boolean         @default(false)
+  marketing_consent_flag           Boolean         @default(false)
+  telehealth_consent_flag          Boolean         @default(false)
+  genetic_testing_consent_flag     Boolean         @default(false)
+  results_sharing_consent_flag     Boolean         @default(false)
+  family_notification_consent_flag Boolean         @default(false)
   consent_details                  Json?
   data_consent_given_date          DateTime?
   data_consent_withdrawn_date      DateTime?
   ai_consent_given_date            DateTime?
   ai_consent_withdrawn_date        DateTime?
-  consent_version_data             String?   @db.VarChar(10)
-  consent_version_ai               String?   @db.VarChar(10)
-  consent_method                   String?   @db.VarChar(50)
-  consenting_person                String?   @db.VarChar(100)
-  consent_notes                    String?   @db.Text
-  ip_address_consent               String?   @db.VarChar(50)
-  user_agent_consent               String?   @db.Text
-  consents_current                 Boolean   @default(true)
+  consent_version_data             String?         @db.VarChar(10)
+  consent_version_ai               String?         @db.VarChar(10)
+  consent_method                   String?         @db.VarChar(50)
+  consenting_person                String?         @db.VarChar(100)
+  consent_notes                    String?
+  ip_address_consent               String?         @db.VarChar(50)
+  user_agent_consent               String?
+  consents_current                 Boolean         @default(true)
   consents_expire_date             DateTime?
-
-  // ! add family history fields
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  created_at                       DateTime        @default(now())
+  updated_at                       DateTime        @updatedAt
+  employeeProfile                  EmployeeProfile @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  organization                     Organization    @relation(fields: [org_id], references: [id], onDelete: Cascade)
 
   @@index([employee_id])
   @@index([org_id])
@@ -479,51 +389,46 @@ model ConsentFlag {
 }
 
 model RiskAssessment {
-  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  employee_id     String          @db.Uuid
-  employeeProfile EmployeeProfile @relation(fields: [employee_id], references: [id], onDelete: Cascade)
-  org_id          String          @db.Uuid
-  organization    Organization    @relation(fields: [org_id], references: [id], onDelete: Cascade)
-
-  assessment_type             String?   @db.VarChar(100)
+  id                          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  employee_id                 String          @db.Uuid
+  org_id                      String          @db.Uuid
+  assessment_type             String?         @db.VarChar(100)
   step_current                Int?
-  assessment_stage            String?   @db.VarChar(100)
+  assessment_stage            String?         @db.VarChar(100)
   stage_start_date            DateTime?
   stage_completion_date       DateTime?
-  cancer_risk_score           Decimal?  @db.Decimal(5, 2)
-  cancer_risk_category        String?   @db.VarChar(50)
+  cancer_risk_score           Decimal?        @db.Decimal(5, 2)
+  cancer_risk_category        String?         @db.VarChar(50)
   cancer_risk_factors         Json?
-  heart_disease_risk_score    Decimal?  @db.Decimal(5, 2)
-  heart_disease_risk_category String?   @db.VarChar(50)
+  heart_disease_risk_score    Decimal?        @db.Decimal(5, 2)
+  heart_disease_risk_category String?         @db.VarChar(50)
   heart_risk_factors          Json?
-  diabetes_risk_score         Decimal?  @db.Decimal(5, 2)
-  diabetes_risk_category      String?   @db.VarChar(50)
+  diabetes_risk_score         Decimal?        @db.Decimal(5, 2)
+  diabetes_risk_category      String?         @db.VarChar(50)
   diabetes_risk_factors       Json?
-  other_risk_score            Decimal?  @db.Decimal(5, 2)
+  other_risk_score            Decimal?        @db.Decimal(5, 2)
   other_conditions_assessed   Json?
-  overall_risk_score          Decimal?  @db.Decimal(5, 2)
-  overall_risk_category       String?   @db.VarChar(50)
-  risk_calculation_method     String?   @db.VarChar(100)
+  overall_risk_score          Decimal?        @db.Decimal(5, 2)
+  overall_risk_category       String?         @db.VarChar(50)
+  risk_calculation_method     String?         @db.VarChar(100)
   assessment_data             Json?
   algorithm_input_parameters  Json?
   algorithm_output_raw        Json?
-  completed                   Boolean   @default(false)
+  completed                   Boolean         @default(false)
   completed_at                DateTime?
-  created_by_id               String?   @db.Uuid
-  created_by_user             User?     @relation("CreatedRiskAssessments", fields: [created_by_id], references: [id])
-  created_by_type             String?   @db.VarChar(50)
-  reviewed_by_id              String?   @db.Uuid
-  reviewed_by_user            User?     @relation("ReviewedRiskAssessments", fields: [reviewed_by_id], references: [id])
+  created_by_id               String?         @db.Uuid
+  created_by_type             String?         @db.VarChar(50)
+  reviewed_by_id              String?         @db.Uuid
   reviewed_at                 DateTime?
-  flagged_for_clinical_review Boolean   @default(false)
-  flagged_by_id               String?   @db.Uuid
-  flagged_by_user             User?     @relation("FlaggedRiskAssessments", fields: [flagged_by_id], references: [id])
-  screening_recommendations   String?   @db.Text
-  triggers_case_creation      Boolean   @default(false)
-  associated_case_id          String?   @db.Uuid
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  flagged_for_clinical_review Boolean         @default(false)
+  flagged_by_id               String?         @db.Uuid
+  screening_recommendations   String?
+  triggers_case_creation      Boolean         @default(false)
+  associated_case_id          String?         @db.Uuid
+  created_at                  DateTime        @default(now())
+  updated_at                  DateTime        @updatedAt
+  employeeProfile             EmployeeProfile @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  organization                Organization    @relation(fields: [org_id], references: [id], onDelete: Cascade)
 
   @@index([employee_id])
   @@index([org_id])
@@ -533,63 +438,59 @@ model RiskAssessment {
 }
 
 model ScreeningResult {
-  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  employee_id     String          @db.Uuid
-  employeeProfile EmployeeProfile @relation(fields: [employee_id], references: [id], onDelete: Cascade)
-  org_id          String          @db.Uuid
-  organization    Organization    @relation(fields: [org_id], references: [id], onDelete: Cascade)
-  provider_id     String?         @db.Uuid
-  provider        User?           @relation("ProviderScreeningResults", fields: [provider_id], references: [id])
-
-  check_in_id                  String?   @db.Uuid
-  sample_id                    String?   @db.Uuid
-  test_type                    String?   @db.VarChar(100)
-  test_code                    String?   @db.VarChar(50)
-  collection_date              DateTime? @db.Date
-  entry_date                   DateTime? @db.Date
-  result_date                  DateTime? @db.Date
-  result_status                String?   @db.VarChar(50)
-  result_value                 String?   @db.VarChar(255)
-  result_category              String?   @db.VarChar(50)
-  numeric_value                Decimal?  @db.Decimal(10, 2)
-  numeric_lower_bound          Decimal?  @db.Decimal(10, 2)
-  numeric_upper_bound          Decimal?  @db.Decimal(10, 2)
-  unit_of_measure              String?   @db.VarChar(50)
-  reference_range              String?   @db.VarChar(255)
-  abnormal_flag                String?   @db.VarChar(50)
-  entry_method                 String?   @db.VarChar(100)
-  result_source                String?   @db.VarChar(100)
-  status                       String?   @db.VarChar(50)
-  lab_accession_id             String?   @db.Uuid
-  lab_accession_number         String?   @db.VarChar(100)
-  lab_provider_name            String?   @db.VarChar(255)
-  clinical_notes               String?   @db.Text
+  id                           String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  employee_id                  String           @db.Uuid
+  org_id                       String           @db.Uuid
+  provider_id                  String?          @db.Uuid
+  check_in_id                  String?          @db.Uuid
+  sample_id                    String?          @db.Uuid
+  test_type                    String?          @db.VarChar(100)
+  test_code                    String?          @db.VarChar(50)
+  collection_date              DateTime?        @db.Date
+  entry_date                   DateTime?        @db.Date
+  result_date                  DateTime?        @db.Date
+  result_status                String?          @db.VarChar(50)
+  result_value                 String?          @db.VarChar(255)
+  result_category              String?          @db.VarChar(50)
+  numeric_value                Decimal?         @db.Decimal(10, 2)
+  numeric_lower_bound          Decimal?         @db.Decimal(10, 2)
+  numeric_upper_bound          Decimal?         @db.Decimal(10, 2)
+  unit_of_measure              String?          @db.VarChar(50)
+  reference_range              String?          @db.VarChar(255)
+  abnormal_flag                String?          @db.VarChar(50)
+  entry_method                 String?          @db.VarChar(100)
+  result_source                String?          @db.VarChar(100)
+  status                       String?          @db.VarChar(50)
+  lab_accession_id             String?          @db.Uuid
+  lab_accession_number         String?          @db.VarChar(100)
+  lab_provider_name            String?          @db.VarChar(255)
+  clinical_notes               String?
   related_conditions           Json?
-  abnormal_result              Boolean   @default(false)
-  requires_followup            Boolean   @default(false)
-  followup_recommendation      String?   @db.Text
+  abnormal_result              Boolean          @default(false)
+  requires_followup            Boolean          @default(false)
+  followup_recommendation      String?
   followup_due_date            DateTime?
-  reviewed_by_provider         Boolean   @default(false)
-  reviewed_by_provider_id      String?   @db.Uuid
-  reviewed_by                  User?     @relation("ReviewedScreeningResults", fields: [reviewed_by_provider_id], references: [id])
+  reviewed_by_provider         Boolean          @default(false)
+  reviewed_by_provider_id      String?          @db.Uuid
   reviewed_at                  DateTime?
-  provider_review_notes        String?   @db.Text
-  provider_interpretation      String?   @db.Text
-  escalated_to_navigator       Boolean   @default(false)
-  escalated_by_id              String?   @db.Uuid
-  escalated_by                 User?     @relation("EscalatedScreeningResults", fields: [escalated_by_id], references: [id])
+  provider_review_notes        String?
+  provider_interpretation      String?
+  escalated_to_navigator       Boolean          @default(false)
+  escalated_by_id              String?          @db.Uuid
   escalated_at                 DateTime?
-  escalation_reason            String?   @db.Text
-  image_url                    String?   @db.VarChar(500)
+  escalation_reason            String?
+  image_url                    String?          @db.VarChar(500)
   file_checksum                Bytes?
-  employee_notified            Boolean   @default(false)
+  employee_notified            Boolean          @default(false)
   employee_notification_date   DateTime?
-  employee_notification_method String?   @db.VarChar(50)
+  employee_notification_method String?          @db.VarChar(50)
   checksum                     Bytes?
   metadata                     Json?
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  created_at                   DateTime         @default(now())
+  updated_at                   DateTime         @updatedAt
+  employeeProfile              EmployeeProfile  @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  organization                 Organization     @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  provider                     ProviderProfile? @relation("ProviderScreeningResults", fields: [provider_id], references: [id])
 
   @@index([employee_id])
   @@index([org_id])
@@ -601,20 +502,17 @@ model ScreeningResult {
 }
 
 model EducationProgress {
-  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  employee_id     String          @db.Uuid
-  employeeProfile EmployeeProfile @relation(fields: [employee_id], references: [id], onDelete: Cascade)
-  org_id          String          @db.Uuid
-  organization    Organization    @relation(fields: [org_id], references: [id], onDelete: Cascade)
-
-  module_id                    String?   @db.VarChar(100)
-  module_name                  String?   @db.VarChar(255)
-  module_description           String?   @db.Text
+  id                           String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  employee_id                  String          @db.Uuid
+  org_id                       String          @db.Uuid
+  module_id                    String?         @db.VarChar(100)
+  module_name                  String?         @db.VarChar(255)
+  module_description           String?
   module_sequence_order        Int?
   total_sections               Int?
   completed_sections           Int?
   completion_percentage        Int?
-  completed                    Boolean   @default(false)
+  completed                    Boolean         @default(false)
   passed                       Boolean?
   start_date                   DateTime?
   first_access_date            DateTime?
@@ -623,22 +521,23 @@ model EducationProgress {
   time_spent_minutes           Int?
   sections_completed           Json?
   assessment_score             Json?
-  difficulty_level             String?   @db.VarChar(50)
-  restarted                    Boolean   @default(false)
-  restart_count                Int       @default(0)
-  status                       String?   @db.VarChar(50)
+  difficulty_level             String?         @db.VarChar(50)
+  restarted                    Boolean         @default(false)
+  restart_count                Int             @default(0)
+  status                       String?         @db.VarChar(50)
   expiry_date                  DateTime?
   renewal_due_date             DateTime?
   comprehension_score          Json?
-  faith_reflection_completed   Boolean   @default(false)
-  faith_reflection_notes       String?   @db.Text
-  emoji_encouragement_shown    Boolean   @default(false)
+  faith_reflection_completed   Boolean         @default(false)
+  faith_reflection_notes       String?
+  emoji_encouragement_shown    Boolean         @default(false)
   next_recommended_module_date DateTime?
   learning_path_node           Json?
-  content_version              String?   @db.VarChar(20)
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  content_version              String?         @db.VarChar(20)
+  created_at                   DateTime        @default(now())
+  updated_at                   DateTime        @updatedAt
+  employeeProfile              EmployeeProfile @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  organization                 Organization    @relation(fields: [org_id], references: [id], onDelete: Cascade)
 
   @@index([employee_id])
   @@index([org_id])
@@ -648,46 +547,43 @@ model EducationProgress {
 }
 
 model DocumentVault {
-  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  employee_id     String          @db.Uuid
-  employeeProfile EmployeeProfile @relation(fields: [employee_id], references: [id], onDelete: Cascade)
-  org_id          String          @db.Uuid
-  organization    Organization    @relation(fields: [org_id], references: [id], onDelete: Cascade)
-
-  document_type          String?   @db.VarChar(100)
-  document_name          String?   @db.VarChar(255)
-  document_description   String?   @db.Text
+  id                     String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  employee_id            String          @db.Uuid
+  org_id                 String          @db.Uuid
+  document_type          String?         @db.VarChar(100)
+  document_name          String?         @db.VarChar(255)
+  document_description   String?
   document_date          DateTime?
   upload_date            DateTime?
-  uploaded_by_id         String?   @db.Uuid
-  uploaded_by            User?     @relation(fields: [uploaded_by_id], references: [id])
-  file_name              String?   @db.VarChar(255)
-  file_extension         String?   @db.VarChar(20)
-  file_mime_type         String?   @db.VarChar(100)
+  file_name              String?         @db.VarChar(255)
+  file_extension         String?         @db.VarChar(20)
+  file_mime_type         String?         @db.VarChar(100)
   file_size_bytes        BigInt?
-  blob_storage_path      String?   @db.VarChar(500)
-  blob_container         String?   @db.VarChar(255)
-  blob_file_id           String?   @db.VarChar(255)
+  blob_storage_path      String?         @db.VarChar(500)
+  blob_container         String?         @db.VarChar(255)
+  blob_file_id           String?         @db.VarChar(255)
   file_checksum          Bytes?
-  encrypted_at_rest      Boolean   @default(true)
-  encryption_key_version String?   @db.VarChar(50)
-  document_source        String?   @db.VarChar(100)
-  visibility             String?   @db.VarChar(50)
-  employee_can_download  Boolean   @default(true)
-  employee_can_share     Boolean   @default(false)
-  status                 String    @default("active") @db.VarChar(50)
+  encrypted_at_rest      Boolean         @default(true)
+  encryption_key_version String?         @db.VarChar(50)
+  document_source        String?         @db.VarChar(100)
+  visibility             String?         @db.VarChar(50)
+  employee_can_download  Boolean         @default(true)
+  employee_can_share     Boolean         @default(false)
+  status                 String          @default("active") @db.VarChar(50)
   expiry_date            DateTime?
   retention_delete_date  DateTime?
-  download_count         Int       @default(0)
+  download_count         Int             @default(0)
   download_log           Json?
-  share_count            Int       @default(0)
+  share_count            Int             @default(0)
   share_log              Json?
-  ocr_text               String?   @db.Text
+  ocr_text               String?
   metadata               Json?
-
-  created_at DateTime  @default(now())
-  updated_at DateTime  @updatedAt
-  deleted_at DateTime?
+  created_at             DateTime        @default(now())
+  updated_at             DateTime        @updatedAt
+  deleted_at             DateTime?
+  active                 Boolean         @default(true)
+  employeeProfile        EmployeeProfile @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  organization           Organization    @relation(fields: [org_id], references: [id], onDelete: Cascade)
 
   @@index([employee_id])
   @@index([org_id])
@@ -696,90 +592,177 @@ model DocumentVault {
   @@map("document_vault")
 }
 
-// ---------------------------------------------------------- //
-// -------------------- EMPLOYER PERSONA -------------------- //
-// ---------------------------------------------------------- //
-
 model Employer {
-  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  org_id       String       @db.Uuid
-  organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
-
-  employer_name           String  @unique @db.VarChar(255)
-  employer_legal_name     String? @db.VarChar(255)
-  employer_code           String? @db.VarChar(100)
-  employer_type           String? @db.VarChar(100)
-  industry_classification String? @db.VarChar(50)
-  size_employee_count     String? @db.VarChar(50)
-  website                 String? @db.VarChar(255)
-  logo_url                String? @db.VarChar(500)
-
-  hq_address_street  String? @db.VarChar(255)
-  hq_address_city    String? @db.VarChar(100)
-  hq_address_state   String? @db.VarChar(2)
-  hq_address_zip     String? @db.VarChar(20)
-  hq_address_country String? @default("USA") @db.VarChar(100)
-
-  phone_main String? @db.VarChar(20)
-  phone_hr   String? @db.VarChar(20)
-  email_main String? @db.VarChar(255)
-  email_hr   String? @db.VarChar(255)
-
-  primary_contact_name    String? @db.VarChar(255)
-  primary_contact_title   String? @db.VarChar(100)
-  primary_contact_email   String? @db.VarChar(255)
-  primary_contact_phone   String? @db.VarChar(20)
-  secondary_contact_name  String? @db.VarChar(255)
-  secondary_contact_email String? @db.VarChar(255)
-
-  assigned_account_manager_id String? @db.Uuid
-  assigned_account_manager    User?   @relation(fields: [assigned_account_manager_id], references: [id])
-  account_manager_email       String? @db.VarChar(255)
-  account_manager_phone       String? @db.VarChar(20)
-
-  wellness_director_name  String? @db.VarChar(255)
-  wellness_director_email String? @db.VarChar(255)
-
-  active Boolean @default(true)
-  status String  @default("active") @db.VarChar(50)
-
-  enrollment_date     DateTime?
-  trial_end_date      DateTime?
-  contract_start_date DateTime?
-  contract_end_date   DateTime?
-  auto_renew          Boolean   @default(true)
-
-  total_employees_licensed Int?
-  total_employees_active   Int?
-  licensing_fee_annual     Decimal? @db.Decimal(12, 2)
-  billing_frequency        String?  @db.VarChar(50)
-
-  hipaa_compliant_requirement Boolean @default(true)
-  soc2_compliant_requirement  Boolean @default(false)
-  compliance_requirements     Json?
-
-  participating_in_incentive_program Boolean @default(false)
-  incentive_program_name             String? @db.VarChar(255)
+  id                                 String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id                             String              @db.Uuid
+  employer_name                      String              @unique @db.VarChar(255)
+  employer_legal_name                String?             @db.VarChar(255)
+  employer_code                      String?             @db.VarChar(100)
+  employer_type                      String?             @db.VarChar(100)
+  industry_classification            String?             @db.VarChar(50)
+  size_employee_count                String?             @db.VarChar(50)
+  website                            String?             @db.VarChar(255)
+  logo_url                           String?             @db.VarChar(500)
+  hq_address_street                  String?             @db.VarChar(255)
+  hq_address_city                    String?             @db.VarChar(100)
+  hq_address_state                   String?             @db.VarChar(2)
+  hq_address_zip                     String?             @db.VarChar(20)
+  hq_address_country                 String?             @default("USA") @db.VarChar(100)
+  phone_main                         String?             @db.VarChar(20)
+  phone_hr                           String?             @db.VarChar(20)
+  email_main                         String?             @db.VarChar(255)
+  email_hr                           String?             @db.VarChar(255)
+  primary_contact_name               String?             @db.VarChar(255)
+  primary_contact_title              String?             @db.VarChar(100)
+  primary_contact_email              String?             @db.VarChar(255)
+  primary_contact_phone              String?             @db.VarChar(20)
+  secondary_contact_name             String?             @db.VarChar(255)
+  secondary_contact_email            String?             @db.VarChar(255)
+  assigned_account_manager_id        String?             @db.Uuid
+  account_manager_email              String?             @db.VarChar(255)
+  account_manager_phone              String?             @db.VarChar(20)
+  wellness_director_name             String?             @db.VarChar(255)
+  wellness_director_email            String?             @db.VarChar(255)
+  active                             Boolean             @default(true)
+  status                             String              @default("active") @db.VarChar(50)
+  enrollment_date                    DateTime?
+  trial_end_date                     DateTime?
+  contract_start_date                DateTime?
+  contract_end_date                  DateTime?
+  auto_renew                         Boolean             @default(true)
+  total_employees_licensed           Int?
+  total_employees_active             Int?
+  licensing_fee_annual               Decimal?            @db.Decimal(12, 2)
+  billing_frequency                  String?             @db.VarChar(50)
+  hipaa_compliant_requirement        Boolean             @default(true)
+  soc2_compliant_requirement         Boolean             @default(false)
+  compliance_requirements            Json?
+  participating_in_incentive_program Boolean             @default(false)
+  incentive_program_name             String?             @db.VarChar(255)
   custom_integrations                Json?
-
-  default_language String? @default("en") @db.VarChar(10)
-  timezone         String? @default("America/New_York") @db.VarChar(50)
-
-  white_label_enabled           Boolean @default(false)
-  brand_colors_primary          String? @db.VarChar(20)
-  brand_colors_secondary        String? @db.VarChar(20)
-  custom_communications_enabled Boolean @default(false)
-
-  api_access_enabled Boolean   @default(false)
-  api_tier           String?   @db.VarChar(50)
-  api_last_used      DateTime?
-
-  metadata   Json?
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  default_language                   String?             @default("en") @db.VarChar(10)
+  timezone                           String?             @default("America/New_York") @db.VarChar(50)
+  white_label_enabled                Boolean             @default(false)
+  brand_colors_primary               String?             @db.VarChar(20)
+  brand_colors_secondary             String?             @db.VarChar(20)
+  custom_communications_enabled      Boolean             @default(false)
+  api_access_enabled                 Boolean             @default(false)
+  api_tier                           String?             @db.VarChar(50)
+  api_last_used                      DateTime?
+  metadata                           Json?
+  created_at                         DateTime            @default(now())
+  updated_at                         DateTime            @updatedAt
+  deleted_at                         DateTime?
+  employeeId                         String?             @db.Uuid
+  employer_profiles                  employer_profiles[]
+  employee_profiles                  EmployeeProfile?    @relation(fields: [employeeId], references: [id])
+  organization                       Organization        @relation(fields: [org_id], references: [id], onDelete: Cascade)
 
   @@index([org_id])
   @@index([status])
   @@index([assigned_account_manager_id])
   @@map("employers")
+}
+
+model AdminProfile {
+  id      String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id String @unique @db.Uuid
+  User    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model NavigatorProfile {
+  id      String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id String @unique @db.Uuid
+  User    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model ProviderProfile {
+  id                       String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                  String            @unique @db.Uuid
+  User                     User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  providerScreeningResults ScreeningResult[] @relation("ProviderScreeningResults")
+}
+
+model User {
+  id                         String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id                     String             @db.Uuid
+  email                      String             @unique
+  persona_type               String
+  employment_status          String?            @default("active")
+  mfa_enabled                Boolean            @default(false)
+  mfa_method                 String?
+  mfa_phone                  String?
+  mfa_email                  String?
+  backup_codes               String?
+  active                     Boolean            @default(true)
+  status                     String?            @default("active")
+  last_login                 DateTime?
+  last_login_ip              String?
+  last_login_user_agent      String?
+  password_changed_at        DateTime?
+  mfa_enabled_at             DateTime?
+  failed_login_attempts      Int                @default(0)
+  failed_login_lockout_until DateTime?
+  entra_upn                  String?
+  preferred_language         String?            @default("en")
+  profile_preferences        Json?
+  timezone                   String?            @default("America/New_York")
+  gdpr_consent               Boolean            @default(false)
+  marketing_consent          Boolean            @default(false)
+  gdpr_consent_date          DateTime?
+  created_at                 DateTime           @default(now())
+  updated_at                 DateTime
+  deleted_at                 DateTime?
+  entra_id                   String?            @unique
+  AdminProfile               AdminProfile?
+  NavigatorProfile           NavigatorProfile?
+  ProviderProfile            ProviderProfile?
+  organizations              Organization       @relation(fields: [org_id], references: [id])
+  employeeProfile            EmployeeProfile?
+  employer_profiles          employer_profiles?
+}
+
+model employer_profiles {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id          String       @db.Uuid
+  user_id         String       @unique @db.Uuid
+  employer_id     String       @db.Uuid
+  title           String?
+  department_name String?
+  role            String?
+  phone_work      String?      @db.VarChar(20)
+  email_work      String?      @db.VarChar(255)
+  created_at      DateTime     @default(now())
+  updated_at      DateTime
+  active          Boolean      @default(true)
+  deleted_at      DateTime?
+  employers       Employer     @relation(fields: [employer_id], references: [id], onDelete: Cascade)
+  organizations   Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  User            User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([employer_id])
+  @@index([org_id])
+  @@index([user_id])
+}
+
+model family_health_histories {
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  employeeProfileId String          @db.Uuid
+  relation          String
+  condition         String
+  age_at_diagnosis  Int?
+  status            String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime
+  employee_profiles EmployeeProfile @relation(fields: [employeeProfileId], references: [id], onDelete: Cascade)
+
+  @@index([employeeProfileId])
+}
+
+enum PersonaType {
+  EMPLOYEE
+  EMPLOYER
+  PROVIDER
+  NAVIGATOR
+  ADMIN
 }
